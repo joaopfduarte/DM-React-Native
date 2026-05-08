@@ -7,10 +7,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-
-    // Exemplo:
-    // const token = await AsyncStorage.getItem('token');
-
     const token = 'TOKEN_AQUI';
 
     if (token) {

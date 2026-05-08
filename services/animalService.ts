@@ -1,7 +1,9 @@
+import { Animal } from '@/types/animal';
 import api from './api';
 
 export async function getAnimals(offset:number) {
-  const response = await api.get(`/animals?offset=${offset}`);
+  console.log(offset)
+  const response = await api.get<Animal[]>(`/animals?offset=${offset}`);
 
   return response.data;
 }
