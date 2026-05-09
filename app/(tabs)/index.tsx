@@ -4,14 +4,14 @@ import {
   Text,
   FlatList,
   TextInput,
-  Image,
   ActivityIndicator,
   StyleSheet,
   Pressable,
 } from "react-native";
-import { getAnimals } from "../services/animalService";
+import { getAnimals } from "../../services/animalService";
 import { Animal } from "@/types/animal";
 import { useNavigation } from "@react-navigation/native";
+import { Image } from "expo-image";
 
 export default function Home() {
   const [animals, setAnimals] = useState<Animal[]>([]);
@@ -71,7 +71,11 @@ export default function Home() {
   // Renderiza cada animal
   const renderItem = ({ item }: { item: Animal }) => (
     <View style={styles.card}>
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      <Image
+        source={encodeURI(item.imageUrl)}
+        style={styles.image}
+        contentFit="cover"
+      />
       <Text style={styles.name}>{item.name}</Text>
       <View style={styles.stats}>
         <View>

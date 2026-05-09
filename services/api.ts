@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from './auth.service';
 
 const api = axios.create({
   baseURL: 'https://api-dm-69db35e2f2d0.herokuapp.com',
@@ -7,7 +8,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-    const token = 'TOKEN_AQUI';
+    const token = await getToken();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -15,9 +16,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
