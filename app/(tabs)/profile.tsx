@@ -39,7 +39,7 @@ function Login() {
       });
       console.log(res);
       await saveToken(res.access_token);
-      //navigation.push("/")
+      navigation.push("/")
     } catch (err: any) {
       console.log(err);
       console.log("STATUS:", err.response?.status);

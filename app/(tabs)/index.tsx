@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  ActivityIndicator,
-  StyleSheet,
-  Pressable,
-} from "react-native";
-import { getAnimals } from "../../services/animalService";
 import { Animal } from "@/types/animal";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { getAnimals } from "../../services/animalService";
 
 export default function Home() {
   const [animals, setAnimals] = useState<Animal[]>([]);
@@ -89,7 +89,7 @@ export default function Home() {
       </View>
       <Pressable
         style={styles.quizButton}
-        onPress={() => console.log("página do quiz")}
+        onPress={() => (navigation as any).navigate("quiz", { id: item.id })}
       >
         <Text style={styles.quizButtonText}>Realizar Quiz</Text>
       </Pressable>
