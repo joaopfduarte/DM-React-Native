@@ -1,50 +1,114 @@
-# Welcome to your Expo app 👋
+# Amigos da Fauna — React Native
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile multiplataforma desenvolvido com **Expo** e **React Native**, portando o PWA *Amigos da Fauna* para Android. Projeto da disciplina de Desenvolvimento Mobile — CEFET-MG, Campus VII (2026-1).
 
-## Get started
+## Sobre o app
 
-1. Install dependencies
+O **Amigos da Fauna** é um projeto de educação ambiental sobre a biodiversidade da Mata Atlântica. O app oferece:
 
-   ```bash
-   npm install
-   ```
+- Catálogo de animais com busca e paginação
+- Mapa interativo com localização dos animais
+- Quizzes educativos por animal
+- Autenticação de usuários
+- Compartilhamento de informações sobre animais
 
-2. Start the app
+## Tecnologias
 
-   ```bash
-   npx expo start
-   ```
+- Expo ~54 / React Native 0.81
+- Expo Router (Tabs + Stack)
+- TypeScript
+- Context API (`AuthContext`, `ThemeContext`)
+- Hooks customizados (`useFetch`, `useMutation`)
+- Axios + fetch nativo (via `useFetch`)
+- AsyncStorage + expo-secure-store
+- expo-location + Share API (React Native)
 
-In the output, you'll find options to open the app in a
+## Mapeamento PWA → React Native
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| PWA (navegador) | Equivalente nativo | Uso no app |
+|-----------------|-------------------|------------|
+| Geolocation API | `expo-location` | Mapa — posição do usuário e marcadores dos animais |
+| Web Share API | `Share` (React Native) | Compartilhar dados de animais na home e detalhe |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Estrutura do projeto
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/                  # Rotas (Expo Router)
+  (tabs)/             # Navegação principal
+  quiz.tsx            # Quiz por animal
+  register.tsx        # Cadastro
+  animals/[id].tsx    # Detalhe do animal
+contexts/             # AuthContext, ThemeContext
+hooks/                # useFetch, useMutation, useColorScheme
+services/             # API, auth, storage
+utils/                # Permissões de localização, compartilhamento
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Como executar
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Escaneie o QR Code com o **Expo Go** em um dispositivo Android físico.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Build de produção (APK)
 
-## Join the community
+Pré-requisitos: conta Expo ([expo.dev](https://expo.dev)) e EAS CLI instalado.
 
-Join our community of developers creating universal apps.
+```bash
+npm install -g eas-cli
+eas login
+eas build:configure   # já configurado via eas.json
+eas build -p android --profile production
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Após o build, baixe o `.apk` pelo painel do EAS ou CLI:
+
+```bash
+eas build:list
+```
+
+### Publicar Release no GitHub
+
+1. Crie uma tag: `git tag v1.0.0 && git push origin v1.0.0`
+2. Acesse **Releases** no GitHub → **Draft a new release**
+3. Selecione a tag `v1.0.0`
+4. Anexe o arquivo `.apk` gerado pelo EAS Build
+5. Publique a release
+
+## Plano de testes (Entrega 02)
+
+Checklist de validação manual em dispositivo Android físico:
+
+| # | Teste | Resultado esperado |
+|---|-------|-------------------|
+| 9 | Abrir app via Expo Go | App carrega com tabs Início, Mapa, Perfil, Sobre |
+| 10a | Geolocalização no mapa | Botão "Minha localização" centraliza mapa na posição do usuário |
+| 10b | Compartilhamento | Botão "Compartilhar" abre sheet nativo com dados do animal |
+| 11a | Conceder permissão de localização | Mapa exibe círculo na posição do usuário |
+| 11b | Negar permissão | Alerta informa negação; opção de abrir Configurações |
+| — | Login / Quiz | Quiz exige login; resultados salvos localmente |
+| — | Dark mode | Alternar tema em Perfil ou Sobre |
+| — | Offline (home) | Sem rede, exibe cache de animais do AsyncStorage |
+
+**Dispositivo de teste:** _preencher modelo e versão Android após teste físico_
+
+**Data do teste:** _preencher após teste físico_
+
+## API
+
+Backend: `https://api-dm-69db35e2f2d0.herokuapp.com`
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm start` | Inicia o Expo |
+| `npm run android` | Abre no emulador Android |
+| `npm run lint` | Executa ESLint |
+
+## Equipe
+
+Repositório: [github.com/joaopfduarte/DM-React-Native](https://github.com/joaopfduarte/DM-React-Native)
