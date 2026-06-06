@@ -14,23 +14,24 @@ import Toast from 'react-native-toast-message';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { useMutation } from '@/hooks/useMutation';
-import { getQuizByAnimalId, submitAnswer } from '@/services/quizService';
+import { useQuizQuestions } from '@/hooks/useQuizQuestions';
+import { submitAnswer } from '@/services/quizService';
 import { saveQuizResult } from '@/services/storage.service';
-import { QuizOption, QuizQuestion } from '@/types/quiz';
-
-interface ParsedQuestion extends Omit<QuizQuestion, 'options'> {
-  parsedOptions: QuizOption[];
-}
 
 export default function Quiz() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
 
-  const [questions, setQuestions] = useState<ParsedQuestion[]>([]);
+  const {
+    questions,
+    loading,
+    error,
+    errorStatus,
+    refetch,
+  } = useQuizQuestions(id);
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [hits, setHits] = useState(0);
   const [fails, setFails] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -48,37 +49,11 @@ export default function Quiz() {
   };
 
   useEffect(() => {
-    async function loadQuiz() {
-      try {
-        setLoading(true);
-        const data = await getQuizByAnimalId(Number(id));
-
-        const parsed = data.map((q: QuizQuestion) => {
-          let parsedOptions: QuizOption[] = [];
-          try {
-            parsedOptions = JSON.parse(q.options);
-          } catch {
-            console.error('Erro ao converter opções', q.code);
-          }
-          return { ...q, parsedOptions };
-        });
-
-        setQuestions(parsed);
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 401 || status === 422) {
-          sendError('É necessário fazer login para jogar o quiz.');
-          router.push('/profile');
-        } else {
-          setError('Erro ao carregar quiz. Verifique sua conexão.');
-        }
-      } finally {
-        setLoading(false);
-      }
+    if (errorStatus === 401 || errorStatus === 422) {
+      sendError('É necessário fazer login para jogar o quiz.');
+      router.push('/profile');
     }
-
-    if (id) loadQuiz();
-  }, [id]);
+  }, [errorStatus, router]);
 
   useEffect(() => {
     if (!finished || resultSaved.current) return;
@@ -187,11 +162,17 @@ export default function Quiz() {
     );
   }
 
-  if (error) {
+  if (error && errorStatus !== 401 && errorStatus !== 422) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorTitle, { color: colors.error }]}>Erro</Text>
         <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
+        <Pressable
+          style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+          onPress={refetch}
+        >
+          <Text style={styles.primaryButtonText}>Tentar novamente</Text>
+        </Pressable>
         <Pressable
           style={[styles.primaryButton, { backgroundColor: colors.primary }]}
           onPress={() => router.push('/')}

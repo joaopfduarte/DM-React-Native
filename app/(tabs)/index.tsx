@@ -1,7 +1,7 @@
 import { Animal } from '@/types/animal';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,106 +13,26 @@ import {
 } from 'react-native';
 import ErrorBanner from '@/components/ErrorBanner';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getAnimals } from '@/services/animalService';
-import {
-  addSearchTerm,
-  getAnimalsCache,
-  getSearchHistory,
-  setAnimalsCache,
-} from '@/services/storage.service';
+import { useAnimalsList } from '@/hooks/useAnimalsList';
+import { addSearchTerm, getSearchHistory } from '@/services/storage.service';
 import { shareAnimal } from '@/utils/shareAnimal';
-
-function mergeAnimals(existing: Animal[], incoming: Animal[], replace = false): Animal[] {
-  const base = replace ? [] : existing;
-  const seen = new Set(base.map((animal) => animal.id));
-  const merged = [...base];
-
-  for (const animal of incoming) {
-    if (!seen.has(animal.id)) {
-      seen.add(animal.id);
-      merged.push(animal);
-    }
-  }
-
-  return merged;
-}
 
 export default function Home() {
   const router = useRouter();
   const { colors } = useTheme();
 
-  const [animals, setAnimals] = useState<Animal[]>([]);
+  const {
+    animals,
+    searchHistory,
+    setSearchHistory,
+    loading,
+    error,
+    loadMore,
+    refresh,
+  } = useAnimalsList();
+
   const [animalsFiltered, setAnimalsFiltered] = useState<Animal[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
-
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-
-  const isFetching = useRef(false);
-
-  const fetchAnimals = useCallback(async (currentOffset: number, isRefresh = false) => {
-    if (isFetching.current) return;
-    if (!isRefresh && !hasMore && currentOffset > 0) return;
-
-    if (isRefresh) {
-      setHasMore(true);
-      setOffset(0);
-    }
-
-    isFetching.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await getAnimals(currentOffset);
-
-      if (data.length === 0) {
-        setHasMore(false);
-        return;
-      }
-
-      setAnimals((prev) => {
-        const merged = mergeAnimals(prev, data, isRefresh);
-        setAnimalsCache(merged);
-        return merged;
-      });
-
-      setOffset(currentOffset + 1);
-    } catch {
-      if (currentOffset === 0) {
-        const cached = await getAnimalsCache();
-        if (cached.length > 0) {
-          setAnimals(mergeAnimals([], cached, true));
-          setError('Sem conexão. Exibindo dados salvos localmente.');
-        } else {
-          setError('Não foi possível carregar os animais. Verifique sua conexão.');
-        }
-      } else {
-        setError('Erro ao carregar mais animais.');
-      }
-    } finally {
-      isFetching.current = false;
-      setLoading(false);
-    }
-  }, [hasMore]);
-
-  useEffect(() => {
-    async function bootstrap() {
-      const [cached, history] = await Promise.all([getAnimalsCache(), getSearchHistory()]);
-      if (cached.length > 0) {
-        const deduped = mergeAnimals([], cached, true);
-        setAnimals(deduped);
-        setAnimalsFiltered(deduped);
-      }
-      setSearchHistory(history);
-      fetchAnimals(0, true);
-    }
-
-    bootstrap();
-  }, []);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -173,21 +93,13 @@ export default function Home() {
     </View>
   );
 
-  const handleLoadMore = () => {
-    if (!loading && hasMore && !error) {
-      fetchAnimals(offset);
-    }
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.primary }]}>
         Animais da Mata Atlântica
       </Text>
 
-      {error ? (
-        <ErrorBanner message={error} onRetry={() => fetchAnimals(0, true)} />
-      ) : null}
+      {error ? <ErrorBanner message={error} onRetry={refresh} /> : null}
 
       <TextInput
         placeholder="Buscar animal por nome..."
@@ -211,7 +123,10 @@ export default function Home() {
           {searchHistory.slice(0, 4).map((term) => (
             <Pressable
               key={term}
-              style={[styles.historyChip, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
+              style={[
+                styles.historyChip,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+              ]}
               onPress={() => setSearchQuery(term)}
             >
               <Text style={[styles.historyText, { color: colors.textSecondary }]}>{term}</Text>
@@ -224,9 +139,11 @@ export default function Home() {
         data={animalsFiltered}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        onEndReached={handleLoadMore}
+        onEndReached={loadMore}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loading ? <ActivityIndicator size="large" color={colors.primary} /> : null}
+        ListFooterComponent={
+          loading ? <ActivityIndicator size="large" color={colors.primary} /> : null
+        }
         ListEmptyComponent={
           !loading && animalsFiltered.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>

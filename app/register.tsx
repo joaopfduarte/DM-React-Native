@@ -11,15 +11,12 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useMutation } from '@/hooks/useMutation';
-import { CreateUserPayload } from '@/types/user';
+import { useRegisterMutation } from '@/hooks/useAuthMutations';
 
 export default function Register() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { register } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,14 +25,10 @@ export default function Register() {
   const [success, setSuccess] = useState(false);
 
   const {
-    mutate: handleRegister,
+    registerAndRedirect,
     loading: submitting,
     error: apiError,
-  } = useMutation<void, CreateUserPayload>(async (payload) => {
-    await register(payload);
-    setSuccess(true);
-    setTimeout(() => router.replace('/profile'), 1500);
-  });
+  } = useRegisterMutation();
 
   async function onSubmit() {
     if (!name || !email || !password) {
@@ -46,11 +39,12 @@ export default function Register() {
     setValidationError('');
 
     try {
-      await handleRegister({
+      await registerAndRedirect({
         name: name.trim(),
         email: email.trim(),
         password,
       });
+      setSuccess(true);
     } catch {
       // handled by useMutation
     }

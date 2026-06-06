@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { FetchError } from '@/services/fetchClient';
 
 export interface UseMutationResult<TData, TVariables> {
   mutate: (variables: TVariables) => Promise<TData>;
@@ -12,35 +13,35 @@ export function useMutation<TData, TVariables>(
 ): UseMutationResult<TData, TVariables> {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mutationRef = useRef(mutationFn);
 
-  const mutate = useCallback(
-    async (variables: TVariables): Promise<TData> => {
-      setLoading(true);
-      setError(null);
+  mutationRef.current = mutationFn;
 
-      try {
-        const result = await mutationFn(variables);
-        return result;
-      } catch (err: unknown) {
-        const axiosError = err as {
-          response?: { data?: { detail?: string; message?: string } };
-          message?: string;
-        };
+  const mutate = useCallback(async (variables: TVariables): Promise<TData> => {
+    setLoading(true);
+    setError(null);
 
-        const message =
-          axiosError.response?.data?.detail ||
-          axiosError.response?.data?.message ||
-          (err instanceof Error ? err.message : axiosError.message) ||
-          'Ocorreu um erro. Tente novamente.';
+    try {
+      return await mutationRef.current(variables);
+    } catch (err: unknown) {
+      const axiosError = err as {
+        response?: { data?: { detail?: string; message?: string } };
+        message?: string;
+      };
 
-        setError(message);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [mutationFn],
-  );
+      const message =
+        axiosError.response?.data?.detail ||
+        axiosError.response?.data?.message ||
+        (err instanceof FetchError ? err.message : null) ||
+        (err instanceof Error ? err.message : axiosError.message) ||
+        'Ocorreu um erro. Tente novamente.';
+
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const reset = useCallback(() => {
     setError(null);

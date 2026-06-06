@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,7 @@ import MapView, { Marker, Circle } from 'react-native-maps';
 import { Image } from 'expo-image';
 import ErrorBanner from '@/components/ErrorBanner';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getLocations } from '@/services/animalService';
-import { AnimalLocation } from '@/types/animal';
+import { useAnimalLocations } from '@/hooks/useAnimalLocations';
 import {
   getCurrentPosition,
   requestLocationPermission,
@@ -21,49 +20,15 @@ import {
 
 export default function AnimalsMap() {
   const { colors } = useTheme();
+  const { items: locations, loading, error, loadMore, refresh } = useAnimalLocations();
 
-  const [locations, setLocations] = useState<AnimalLocation[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
   const [userPos, setUserPos] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const mapRef = useRef<MapView>(null);
-  const isFetching = useRef(false);
-
-  const fetchLocations = useCallback(async (currentOffset: number) => {
-    if (isFetching.current) return;
-
-    isFetching.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await getLocations(currentOffset);
-
-      if (data.length === 0) {
-        setHasMore(false);
-      } else {
-        setLocations((prev) => {
-          const newItems = data.filter((d) => !prev.some((p) => p.id === d.id));
-          return [...prev, ...newItems];
-        });
-        setOffset(currentOffset + 1);
-      }
-    } catch {
-      setError('Não foi possível carregar as localizações dos animais.');
-    } finally {
-      isFetching.current = false;
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    fetchLocations(0);
-
     (async () => {
       const permission = await requestLocationPermission();
       if (!permission.granted) {
@@ -71,12 +36,6 @@ export default function AnimalsMap() {
       }
     })();
   }, []);
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      fetchLocations(offset);
-    }
-  };
 
   const getUserLocation = async () => {
     setLocationLoading(true);
@@ -117,7 +76,7 @@ export default function AnimalsMap() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Localização dos Animais</Text>
 
-      {error ? <ErrorBanner message={error} onRetry={() => fetchLocations(0)} /> : null}
+      {error ? <ErrorBanner message={error} onRetry={refresh} /> : null}
       {locationError ? <ErrorBanner message={locationError} onRetry={getUserLocation} /> : null}
 
       <View style={styles.row}>
@@ -127,7 +86,7 @@ export default function AnimalsMap() {
           <FlatList
             data={locations}
             keyExtractor={(item) => item.id.toString()}
-            onEndReached={handleLoadMore}
+            onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             ListFooterComponent={
               loading ? <ActivityIndicator color={colors.primary} /> : null

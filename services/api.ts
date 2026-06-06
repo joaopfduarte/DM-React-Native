@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/constants/api';
 import { getToken } from './auth.service';
 
 const api = axios.create({
-  baseURL: 'https://api-dm-69db35e2f2d0.herokuapp.com',
+  baseURL: API_BASE_URL,
   timeout: 10000,
 });
 

@@ -13,9 +13,8 @@ import {
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useMutation } from '@/hooks/useMutation';
+import { useLoginMutation } from '@/hooks/useAuthMutations';
 import { ThemePreference } from '@/services/storage.service';
-import { LoginPayload } from '@/types/user';
 
 const themeOptions: { label: string; value: ThemePreference }[] = [
   { label: 'Sistema', value: 'system' },
@@ -26,7 +25,7 @@ const themeOptions: { label: string; value: ThemePreference }[] = [
 export default function Profile() {
   const router = useRouter();
   const { colors, preference, setPreference } = useTheme();
-  const { isAuthenticated, isLoading, user, login, logout } = useAuth();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,10 +36,7 @@ export default function Profile() {
     loading: submitting,
     error: apiError,
     reset: resetError,
-  } = useMutation<void, LoginPayload>(async (payload) => {
-    await login(payload);
-    router.replace('/');
-  });
+  } = useLoginMutation();
 
   async function onSubmit() {
     if (!email || !password) {
