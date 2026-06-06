@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,75 +10,145 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { login } from "../../services/userService";
-import { LoginResponse } from "@/types/user";
-import { saveToken } from "@/services/auth.service";
+} from 'react-native';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLoginMutation } from '@/hooks/useAuthMutations';
+import { ThemePreference } from '@/services/storage.service';
 
-function Login() {
-  const navigation = useRouter();
+const themeOptions: { label: string; value: ThemePreference }[] = [
+  { label: 'Sistema', value: 'system' },
+  { label: 'Claro', value: 'light' },
+  { label: 'Escuro', value: 'dark' },
+];
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [apiError, setApiError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+export default function Profile() {
+  const router = useRouter();
+  const { colors, preference, setPreference } = useTheme();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
 
-  async function handleLogin() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [validationError, setValidationError] = useState('');
+
+  const {
+    mutate: handleLogin,
+    loading: submitting,
+    error: apiError,
+    reset: resetError,
+  } = useLoginMutation();
+
+  async function onSubmit() {
     if (!email || !password) {
-      setApiError("Por favor, preencha todos os campos.");
+      setValidationError('Por favor, preencha todos os campos.');
       return;
     }
 
-    setApiError("");
-    setSubmitting(true);
+    setValidationError('');
 
     try {
-      let res: LoginResponse = await login({
-        email: email.trim(),
-        password: password,
-      });
-      console.log(res);
-      await saveToken(res.access_token);
-      navigation.push("/")
-    } catch (err: any) {
-      console.log(err);
-      console.log("STATUS:", err.response?.status);
-      console.log("DATA:", err.response?.data);
-      console.log("MESSAGE:", err.response?.data?.message);
-      setApiError(
-        err.response?.data.detail
-          ? err.response?.data.detail
-          : "Ocorreu um erro ao realizar login. Tente novamente mais tarde",
-      );
-    } finally {
-      setSubmitting(false);
+      await handleLogin({ email: email.trim(), password });
+    } catch {
+      resetError();
     }
+  }
+
+  if (isLoading) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    return (
+      <ScrollView
+        contentContainerStyle={[styles.scrollContainer, { backgroundColor: colors.backgroundSecondary }]}
+      >
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.header}>
+            <Text style={styles.emoji}>🌿</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Olá, {user.name}!</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{user.email}</Text>
+          </View>
+
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>Preferência de tema</Text>
+          <View style={styles.themeRow}>
+            {themeOptions.map((option) => (
+              <Pressable
+                key={option.value}
+                style={[
+                  styles.themeChip,
+                  {
+                    backgroundColor: preference === option.value ? colors.primary : colors.inputBackground,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setPreference(option.value)}
+              >
+                <Text
+                  style={{
+                    color: preference === option.value ? colors.white : colors.text,
+                    fontWeight: '600',
+                  }}
+                >
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            onPress={logout}
+          >
+            <Text style={styles.buttonText}>Sair</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.header}>
             <Text style={styles.emoji}>🌿</Text>
-            <Text style={styles.title}>Entrar</Text>
-            <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Entrar</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Bem-vindo de volta!</Text>
           </View>
 
-          {apiError ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{apiError}</Text>
+          {(validationError || apiError) ? (
+            <View
+              style={[
+                styles.errorBanner,
+                { backgroundColor: colors.errorBackground, borderColor: colors.errorBorder },
+              ]}
+            >
+              <Text style={[styles.errorText, { color: colors.error }]}>
+                {validationError || apiError}
+              </Text>
             </View>
           ) : null}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>E-mail</Text>
+            <Text style={[styles.label, { color: colors.text }]}>E-mail</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.inputBackground,
+                  color: colors.text,
+                },
+              ]}
               placeholder="seu@email.com"
+              placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -88,10 +158,18 @@ function Login() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Senha</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Senha</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.inputBackground,
+                  color: colors.text,
+                },
+              ]}
               placeholder="Sua senha"
+              placeholderTextColor={colors.textMuted}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -99,9 +177,13 @@ function Login() {
           </View>
 
           <Pressable
-            style={[styles.button, submitting && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={submitting}
+            style={[
+              styles.button,
+              { backgroundColor: colors.primary },
+              submitting && { backgroundColor: colors.primaryDisabled },
+            ]}
+            onPress={onSubmit}
+            disabled={submitting || !email || !password}
           >
             {submitting ? (
               <ActivityIndicator color="#FFF" />
@@ -110,9 +192,10 @@ function Login() {
             )}
           </Pressable>
 
-          <Pressable style={styles.footerLink} onPress={() => navigation.push("/register")}>
-            <Text style={styles.footerText}>
-              Não tem uma conta? <Text style={styles.boldText}>Cadastrar</Text>
+          <Pressable style={styles.footerLink} onPress={() => router.push('/register')}>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+              Não tem uma conta?{' '}
+              <Text style={[styles.boldText, { color: colors.primary }]}>Cadastrar</Text>
             </Text>
           </Pressable>
         </View>
@@ -124,25 +207,28 @@ function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 20,
   },
   card: {
-    backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 32,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
   },
   header: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 24,
   },
   emoji: {
@@ -151,37 +237,52 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
+    marginTop: 4,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+  },
+  themeChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
   },
   errorBanner: {
-    backgroundColor: "#FFF1F0",
     borderWidth: 1,
-    borderColor: "#FFA39E",
     padding: 10,
     borderRadius: 4,
     marginBottom: 16,
   },
   errorText: {
-    color: "#F5222D",
     fontSize: 13,
+  },
+  helperText: {
+    fontSize: 13,
+    marginBottom: 12,
   },
   inputGroup: {
     marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    color: "#333",
     marginBottom: 8,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: "#D9D9D9",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -190,32 +291,24 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 50,
-    backgroundColor: "#4A5D23",
     borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 8,
   },
-  buttonDisabled: {
-    backgroundColor: "#A2B086",
-  },
   buttonText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   footerLink: {
     marginTop: 20,
-    alignItems: "center",
+    alignItems: 'center',
   },
   footerText: {
-    color: "#666",
     fontSize: 14,
   },
   boldText: {
-    fontWeight: "700",
-    color: "#4A5D23",
+    fontWeight: '700',
   },
 });
-
-export default Login;

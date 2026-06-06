@@ -1,41 +1,71 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export type ColorScheme = 'light' | 'dark';
 
-export const Colors = {
+export const AppColors = {
   light: {
     text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
+    textSecondary: '#666666',
+    textMuted: '#555555',
+    background: '#FFFFFF',
+    backgroundSecondary: '#F5F5F5',
+    card: '#FFFFFF',
+    cardAlt: 'rgba(245, 241, 227, 0.4)',
+    primary: '#4A5D23',
+    primaryDisabled: '#A2B086',
+    accent: '#D38345',
+    brown: '#5D4037',
+    border: '#D9D9D9',
+    borderLight: '#CCCCCC',
+    inputBackground: '#FAFAFA',
+    imagePlaceholder: '#EDE8D6',
+    error: '#F5222D',
+    errorBackground: '#FFF1F0',
+    errorBorder: '#FFA39E',
+    success: '#2E7D32',
+    tabActive: '#2E7D32',
+    tabInactive: '#888888',
     icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    shadow: '#000000',
+    white: '#FFFFFF',
   },
   dark: {
     text: '#ECEDEE',
+    textSecondary: '#B0B3B8',
+    textMuted: '#9BA1A6',
     background: '#151718',
-    tint: tintColorDark,
+    backgroundSecondary: '#1E2022',
+    card: '#252729',
+    cardAlt: 'rgba(45, 50, 40, 0.6)',
+    primary: '#7CB342',
+    primaryDisabled: '#556B2F',
+    accent: '#E09860',
+    brown: '#BCAAA4',
+    border: '#3A3D40',
+    borderLight: '#444444',
+    inputBackground: '#2A2D30',
+    imagePlaceholder: '#3A3D35',
+    error: '#FF7875',
+    errorBackground: '#3D2020',
+    errorBorder: '#5C2020',
+    success: '#81C784',
+    tabActive: '#7CB342',
+    tabInactive: '#888888',
     icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    shadow: '#000000',
+    white: '#FFFFFF',
   },
 };
 
+export type AppColorPalette = typeof AppColors.light;
+
+export const Colors = AppColors;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
