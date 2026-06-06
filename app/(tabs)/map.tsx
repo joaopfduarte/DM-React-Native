@@ -164,12 +164,9 @@ export default function AnimalsMap() {
                   latitude: animal.location.latitude,
                   longitude: animal.location.longitude,
                 }}
-              >
-                <View style={styles.popup}>
-                  <Image source={{ uri: animal.imageUrl }} style={styles.popupImage} />
-                  <Text style={[styles.popupTitle, { color: colors.text }]}>{animal.name}</Text>
-                </View>
-              </Marker>
+                title={animal.name}
+                description={animal.locationDescription}
+              />
             ))}
 
             {userPos ? (
@@ -259,24 +256,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '700',
-  },
-  popup: {
-    flexDirection: 'row',
-    padding: 0,
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  popupImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  popupTitle: {
-    fontSize: 12,
     fontWeight: '700',
   },
 });

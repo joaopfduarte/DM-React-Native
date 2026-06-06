@@ -1,7 +1,16 @@
+import * as Linking from 'expo-linking';
 import { Share } from 'react-native';
 import { Animal } from '@/types/animal';
 
-export async function shareAnimal(animal: Pick<Animal, 'name' | 'height' | 'weight' | 'imageUrl'>) {
+type ShareableAnimal = Pick<Animal, 'id' | 'name' | 'height' | 'weight'>;
+
+export function getAnimalShareUrl(animalId: number) {
+  return Linking.createURL(`animals/${animalId}`);
+}
+
+export async function shareAnimal(animal: ShareableAnimal) {
+  const animalPageUrl = getAnimalShareUrl(animal.id);
+
   const message = [
     `🌿 ${animal.name} — Amigos da Fauna`,
     '',
@@ -9,11 +18,13 @@ export async function shareAnimal(animal: Pick<Animal, 'name' | 'height' | 'weig
     `Peso: ${animal.weight}`,
     '',
     'Conheça mais sobre a fauna da Mata Atlântica!',
-    animal.imageUrl,
+    '',
+    `Abra a página do animal: ${animalPageUrl}`,
   ].join('\n');
 
   await Share.share({
     message,
+    url: animalPageUrl,
     title: `Compartilhar ${animal.name}`,
   });
 }

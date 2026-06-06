@@ -24,8 +24,33 @@ export interface QuizResultEntry {
   date: string;
 }
 
+async function safeGetItem(key: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch (error) {
+    console.warn(`AsyncStorage.getItem failed (${key}):`, error);
+    return null;
+  }
+}
+
+async function safeSetItem(key: string, value: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`AsyncStorage.setItem failed (${key}):`, error);
+  }
+}
+
+async function safeRemoveItem(key: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (error) {
+    console.warn(`AsyncStorage.removeItem failed (${key}):`, error);
+  }
+}
+
 export async function getThemePreference(): Promise<ThemePreference> {
-  const value = await AsyncStorage.getItem(KEYS.THEME_PREFERENCE);
+  const value = await safeGetItem(KEYS.THEME_PREFERENCE);
   if (value === 'light' || value === 'dark' || value === 'system') {
     return value;
   }
@@ -33,11 +58,11 @@ export async function getThemePreference(): Promise<ThemePreference> {
 }
 
 export async function setThemePreference(preference: ThemePreference): Promise<void> {
-  await AsyncStorage.setItem(KEYS.THEME_PREFERENCE, preference);
+  await safeSetItem(KEYS.THEME_PREFERENCE, preference);
 }
 
 export async function getAnimalsCache(): Promise<Animal[]> {
-  const raw = await AsyncStorage.getItem(KEYS.ANIMALS_CACHE);
+  const raw = await safeGetItem(KEYS.ANIMALS_CACHE);
   if (!raw) return [];
   try {
     return JSON.parse(raw) as Animal[];
@@ -47,11 +72,11 @@ export async function getAnimalsCache(): Promise<Animal[]> {
 }
 
 export async function setAnimalsCache(animals: Animal[]): Promise<void> {
-  await AsyncStorage.setItem(KEYS.ANIMALS_CACHE, JSON.stringify(animals));
+  await safeSetItem(KEYS.ANIMALS_CACHE, JSON.stringify(animals));
 }
 
 export async function getSearchHistory(): Promise<string[]> {
-  const raw = await AsyncStorage.getItem(KEYS.SEARCH_HISTORY);
+  const raw = await safeGetItem(KEYS.SEARCH_HISTORY);
   if (!raw) return [];
   try {
     return JSON.parse(raw) as string[];
@@ -66,11 +91,11 @@ export async function addSearchTerm(term: string): Promise<void> {
 
   const history = await getSearchHistory();
   const updated = [trimmed, ...history.filter((item) => item !== trimmed)].slice(0, 8);
-  await AsyncStorage.setItem(KEYS.SEARCH_HISTORY, JSON.stringify(updated));
+  await safeSetItem(KEYS.SEARCH_HISTORY, JSON.stringify(updated));
 }
 
 export async function getUserProfile(): Promise<StoredUserProfile | null> {
-  const raw = await AsyncStorage.getItem(KEYS.USER_PROFILE);
+  const raw = await safeGetItem(KEYS.USER_PROFILE);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as StoredUserProfile;
@@ -80,23 +105,23 @@ export async function getUserProfile(): Promise<StoredUserProfile | null> {
 }
 
 export async function setUserProfile(profile: StoredUserProfile): Promise<void> {
-  await AsyncStorage.setItem(KEYS.USER_PROFILE, JSON.stringify(profile));
+  await safeSetItem(KEYS.USER_PROFILE, JSON.stringify(profile));
 }
 
 export async function clearUserProfile(): Promise<void> {
-  await AsyncStorage.removeItem(KEYS.USER_PROFILE);
+  await safeRemoveItem(KEYS.USER_PROFILE);
 }
 
 export async function saveQuizResult(entry: QuizResultEntry): Promise<void> {
-  const raw = await AsyncStorage.getItem(KEYS.QUIZ_RESULTS);
+  const raw = await safeGetItem(KEYS.QUIZ_RESULTS);
   const results: QuizResultEntry[] = raw ? JSON.parse(raw) : [];
   const filtered = results.filter((item) => item.animalId !== entry.animalId);
   filtered.unshift(entry);
-  await AsyncStorage.setItem(KEYS.QUIZ_RESULTS, JSON.stringify(filtered.slice(0, 20)));
+  await safeSetItem(KEYS.QUIZ_RESULTS, JSON.stringify(filtered.slice(0, 20)));
 }
 
 export async function getQuizResults(): Promise<QuizResultEntry[]> {
-  const raw = await AsyncStorage.getItem(KEYS.QUIZ_RESULTS);
+  const raw = await safeGetItem(KEYS.QUIZ_RESULTS);
   if (!raw) return [];
   try {
     return JSON.parse(raw) as QuizResultEntry[];

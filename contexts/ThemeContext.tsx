@@ -29,10 +29,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    getThemePreference().then((stored) => {
-      setPreferenceState(stored);
-      setIsReady(true);
-    });
+    getThemePreference()
+      .then((stored) => {
+        setPreferenceState(stored);
+      })
+      .catch(() => {
+        setPreferenceState('system');
+      })
+      .finally(() => {
+        setIsReady(true);
+      });
   }, []);
 
   const colorScheme: ColorScheme =
