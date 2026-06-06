@@ -22,6 +22,21 @@ import {
 } from '@/services/storage.service';
 import { shareAnimal } from '@/utils/shareAnimal';
 
+function mergeAnimals(existing: Animal[], incoming: Animal[], replace = false): Animal[] {
+  const base = replace ? [] : existing;
+  const seen = new Set(base.map((animal) => animal.id));
+  const merged = [...base];
+
+  for (const animal of incoming) {
+    if (!seen.has(animal.id)) {
+      seen.add(animal.id);
+      merged.push(animal);
+    }
+  }
+
+  return merged;
+}
+
 export default function Home() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -44,6 +59,7 @@ export default function Home() {
 
     if (isRefresh) {
       setHasMore(true);
+      setOffset(0);
     }
 
     isFetching.current = true;
@@ -59,7 +75,7 @@ export default function Home() {
       }
 
       setAnimals((prev) => {
-        const merged = isRefresh ? data : [...prev, ...data];
+        const merged = mergeAnimals(prev, data, isRefresh);
         setAnimalsCache(merged);
         return merged;
       });
@@ -69,7 +85,7 @@ export default function Home() {
       if (currentOffset === 0) {
         const cached = await getAnimalsCache();
         if (cached.length > 0) {
-          setAnimals(cached);
+          setAnimals(mergeAnimals([], cached, true));
           setError('Sem conexão. Exibindo dados salvos localmente.');
         } else {
           setError('Não foi possível carregar os animais. Verifique sua conexão.');
@@ -87,8 +103,9 @@ export default function Home() {
     async function bootstrap() {
       const [cached, history] = await Promise.all([getAnimalsCache(), getSearchHistory()]);
       if (cached.length > 0) {
-        setAnimals(cached);
-        setAnimalsFiltered(cached);
+        const deduped = mergeAnimals([], cached, true);
+        setAnimals(deduped);
+        setAnimalsFiltered(deduped);
       }
       setSearchHistory(history);
       fetchAnimals(0, true);
